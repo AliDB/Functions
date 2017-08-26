@@ -1,0 +1,234 @@
+
+Functions
+=========
+
+n this tutorial we are trying to write a function in R. Our function is Anova (Analysis of variance). T
+his file is part Iof my project for Statistical Computing with Prof. Harner.
+
+To tesfiy our function, we are giving variable Z as in input to check what would be our Anova output. We have written our function in a way to work with  both lists and dataframe.
+
+#### 1.  Create a function to perform a one-way analysis of variance. The input should be a list consisting of (possibly) named components, one for each group. The output should be list containing components for the between SS, the within SS, the between degrees of freedom, and the within degrees of freedom.
+
+``` r
+rm(list=ls())
+oneway <- function(z) {
+  # z <- list(A=c(62, 60, 63, 59), B=c( 63 ,67 ,71, 64, 65, 66 ), C=c(68, 66, 71, 67, 68, 68),D=c(56 ,62,60, 61, 63, 64, 63, 59) )
+  
+ #############
+if (!is.data.frame(z)) {  
+   df <- data.frame(matrix(unlist(z), nrow=length(unlist(z)), byrow=T));df
+  ##first one
+  
+   remove(f)
+   f<-numeric()
+   for (i in seq(1,length(z))){
+    
+     f <-  c(f,replicate(length(z[[i]]),paste("fact",i) ))
+  }
+  f
+  unlist(f)
+  
+  
+   df2 <- data.frame(matrix(unlist(f), nrow=length(unlist(f)), byrow=T));df2
+  ### Second one
+  
+  z <- cbind(df,df2)
+}
+  
+
+  l <- length(levels(z[,1])) # If z[,1] is not the column of labels then its length will be zero so it means that this column is assigned for the data and the next column which is z[,2] is assigned for the labels.
+  
+  if (l == 0)   {lev <- levels(z[, 2]) ; n=2;m=1 } else {lev <- levels(z[, 1]); n=1;m=2}; lev ;n;m; # This line will find which column of the input z is assigend for the labels. as a consequence the other column contains the data.
+  
+  varOfGroups=0; meanOfGroups=0;
+  
+  for (i in 1:length(lev)) {
+    meanOfGroups[i] <- mean(z[which(z[,n]== lev[i]),m]); # this line will find the mean for the each group ; # More detials of the line is in the following line
+    # which(z[,2]== lev[i] this part of code will select the groups that have the same lable as lev[i]  then by assinging the number of those rows to this code z[which(z[,2]== lev[i]),1] the code will select those rows but from the other column which has the data. Finally by apllying mean the mean of different groups will be found.
+  }
+  meanOfGroups ; 
+  #meanOfMeans <- mean(meanOfGroups) ; meanOfMeans 
+  meanOfMeans <- mean(z[,m])
+  
+  
+  S_BG=0;
+  
+  for(i in 1:length(lev))
+  { S_BG[i] <- length(which(z[,n] == lev[i])) *(meanOfGroups[i] - meanOfMeans)^2}
+  
+  SS_BG = sum(S_BG) ; SS_BG  #Sum of Squered Between Group
+  
+  
+  df_BG <- (length(lev)-1) ;df_BG #Degree of Freedon Between Group
+  
+  
+  ## meanOfSS_BG <- (SST_BG / df_BG); meanOfSS_BG; # Mean of SS Between Groups
+  
+  
+  S_WG=0; # Squar within Groups
+  
+  for (i in 1:length(lev)) {
+    S_WG[i] <- sum((z[which(z[,n]== lev[i]),m]-meanOfGroups[i])^2);
+  }
+  
+  SS_WG <- sum(S_WG) ; SS_WG # Sum of Squeared within Groups
+  
+  
+  df_WG <- length(z[,n]) - length(lev); df_WG   # Degree of Freedom in between N-K
+  
+  ## meanOfSS_WG <- SS_WG/df_WG ; meanOfSS_WG
+  ## F_test <- meanOfSS_BG / meanOfSS_WG ;F_test
+  ## oneway <- list(SS_BG,SS_WG,meanOfSS_BG, df_BG,df_WG, meanOfSS_WG ,F_test); return(oneway);
+  
+  oneway <- list(df_BG,df_WG,SS_BG,SS_WG); oneway
+  return(oneway) 
+  
+}
+```
+
+#### 1.  Create a function to summarize the output in a one-way ANOVA table, including the F test. The input is the output list in the previous question. The output should be one-way ANOVA table.
+
+``` r
+oneway.table <- function(x) {
+  
+  #Since the first Question didn't talk about the F test and some other values in ANOVA table, I assume that those values should be calculated in this part.   #If this assumpton is not true then the comment lines that have ## should be uncommented in the first question.
+  
+  x <- unlist(x); x
+ 
+  meanOfSS_WG=0;
+  meanOfSS_WG <- x[4]/x[2];  meanOfSS_WG # In this line of the code the meanOfSS_WG is calculated by this division of SS_WG/df_WG
+  
+  meanOfSS_BG=0;
+  meanOfSS_BG <- x[3]/x[1];  meanOfSS_BG # In this line of the code the meanOfSS_BG is calculated by this division of SS_BG/df_BG
+  
+  meanT <- c(meanOfSS_BG, meanOfSS_WG); meanT
+  dim(meanT) <- c(2,1); meanT
+  
+  #remove(F_test)
+  F_test <- meanOfSS_BG / meanOfSS_WG ;F_test # Now F test is calculated here
+  F_test <- matrix(F_test,2,1)
+  dim(F_test) <- c(2,1); F_test
+  
+  
+  #remove(p_Value)
+  p_Value <- 1 - pf(F_test, x[1] ,x[2] ); p_Value; # Since I saw that builtin function of AOV in the R is calculating this parameter so I have decided to calculate this paramter too.
+  #p_Value <- c(p_Value,p_Value) ; p_Value
+  dim(p_Value) <- c(2,1) ; p_Value
+  
+  
+  dim(x) <- c(2,2); x
+  
+  output.table<- cbind(x,meanT,F_test,p_Value)
+  
+  dimnames(output.table) <- list(c("diet","Residuals"),c( "Df","Sum Sq","Mean sq","F value","Pr(>F)")) ;output.table   
+  
+  
+  ##output <- as.table(output) # if I want to have the output strictly in table format I can use this command
+  
+  return(output.table)
+  
+  # Put your R code here.
+}
+```
+
+### 1.  Your functions should be illustrated with the `coagulation` data set. The data consists of blood coagulation times for 24 animals randomly assigned to four different diets.
+
+``` r
+library(faraway)
+data(coagulation)
+head(coagulation)
+```
+
+    ##   coag diet
+    ## 1   62    A
+    ## 2   60    A
+    ## 3   63    A
+    ## 4   59    A
+    ## 5   63    B
+    ## 6   67    B
+
+
+
+#### Here I'm verifying that my code will works with input data in list format which has components with possibly names assigned to it and also works with the dataframe which has the same format as the coagulation dataset has. I checked with three different datasets and I just uncomment the one which is the same as the coagulation dataset.
+#So If you want to check it with list you can assign the z to inputData and if you want to check it with dataframe input form you may uncomment the following line. ( uncomment inputData <- coagulation)
+
+``` r
+#inputData <- coagulation
+
+```
+
+coagulation dataset
+
+```{r}
+z <- list (A=c(62, 60, 63, 59), B=c( 63 ,67 ,71, 64, 65, 66 ), C=c(68, 66, 71, 67, 68, 68),D=c(56 ,62,60, 61, 63, 64, 63, 59) );z ;
+```
+
+    ## $A
+    ## [1] 62 60 63 59
+    ## 
+    ## $B
+    ## [1] 63 67 71 64 65 66
+    ## 
+    ## $C
+    ## [1] 68 66 71 67 68 68
+    ## 
+    ## $D
+    ## [1] 56 62 60 61 63 64 63 59
+
+``` r
+inputData <- z  # check the program with parameter z which is the same as coagulation except that it is in list format
+
+
+#a <- data.frame(coag= c(62, 60, 63, 59,63 ,67 ,71, 64, 65, 66,68, 66, 71, 67, 68, 68,56 ,62,60, 61, 63, 64, 63, 59),diet=c(rep("A",4),rep("B",6),rep("C",6),rep("D",8)))
+
+#dataset2
+#z<- list (A=c(62, 60, 63, 59), B=c( 63 ,67,71) )
+#a <- data.frame(coag= c(62,60,63,59,63,67,71), diet=c("A","A","A","A","B","B","B"));a
+
+#dataset3
+#z<- list( A= c(6,8,4,5,3,4), B= c(8,12,9,11,6,8),C=c(13,9,11,8,7))
+#a <- data.frame(coag=c(6,8,4,5,3,4,8,12,9,11,6,8,13,9,11,8,7),diet=c(rep("A",6),rep("B",6),rep("C",5)));a
+
+
+output <- oneway(inputData) ; output  # This line will find the answer of Q1
+```
+
+    ## Warning in remove(f): object 'f' not found
+
+    ## [[1]]
+    ## [1] 3
+    ## 
+    ## [[2]]
+    ## [1] 20
+    ## 
+    ## [[3]]
+    ## [1] 228
+    ## 
+    ## [[4]]
+    ## [1] 112
+
+``` r
+output.table <- oneway.table(output) ; output.table # This line will find the answer of Q2
+```
+
+    ##           Df Sum Sq Mean sq  F value       Pr(>F)
+    ## diet       3    228    76.0 13.57143 4.658471e-05
+    ## Residuals 20    112     5.6 13.57143 4.658471e-05
+
+``` r
+#a <- head(coagulation);a
+
+
+fit <- aov(coag ~ diet, data=coagulation); summary(fit)  # This is built-in function in R which I used here to show that my result are the same with that one.
+```
+
+    ##             Df Sum Sq Mean Sq F value   Pr(>F)    
+    ## diet         3    228    76.0   13.57 4.66e-05 ***
+    ## Residuals   20    112     5.6                     
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+
+Since the output is comming with all of the names for the rows and columns so it is easy to see what data are coming out with that. Data's are degree of freedom, sum of squares, Mean of squares, F value and Probabality of that F value. I found out buit in function of anova-table in R so I tried to mimick that one to write my code. SS between group is 228 and SS within group is 112. The mean of sq between group (SS\_BG/df\_BG) is 76 and the mean of sqaures within group (SS\_WG/df\_WG) is 5.6 . for finding the mean in between group we find the mean of whole datas and the mean of each group and then subtracting them while multiplying with the number of datas in each group and finally divide it to df\_BG. For fnding the Mean of squares for within group we should do the similar process to the above but we need to subtract each element of each group from the mean of that group.
+
+I used the data and example from this link <https://en.wikipedia.org/wiki/F-test>.
