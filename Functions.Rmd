@@ -1,9 +1,13 @@
-Stat 523
---------
+---
+output:
+  rmarkdown: github_document
+  html_document: default
+  pdf_document: default
+---
 
-### Assignment 2: Functions
+# Functions
 
-#### Explain your code where appropriate.
+n this tutorial we are trying to write a function in R. Our function is Anova. This file is part Iof my project for Statistical Computing with Prof. Harner. 
 
 1. Create a function to perform a one-way analysis of variance. The input should be a list consisting of (possibly) named components, one for each group. The output should be list containing components for the between SS, the within SS, the between degrees of freedom, and the within degrees of freedom. 
 ```{r}
